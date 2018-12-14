@@ -1,0 +1,245 @@
+{% load static %}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>square</title>
+
+    <!-- import css -->
+    <link rel="stylesheet" href="{% static 'style/others.css' %}">
+
+    <!-- element ui-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+
+    <!-- bulma -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+
+    <!-- MDUI -->
+    <link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/mdui/0.4.2/css/mdui.min.css">
+    <script src="//cdnjs.loli.net/ajax/libs/mdui/0.4.2/js/mdui.min.js"></script>
+</head>
+
+<body>
+<div id="app">
+
+    <div>
+        <el-menu class="el-menu-demo" mode="horizontal">
+            <el-menu-item index="1"><a href="/me"><img src="/static/image/logo.jpg" width="156" height="34"></a>
+            </el-menu-item>
+            <el-menu-item index="2" style="float:left">
+                <el-input size="mini" placeholder="search" v-model="search_input" prefix-icon="el-icon-search"
+                          @keyup.enter.native="search"></el-input>
+            </el-menu-item>
+            <el-menu-item index="3" style="float:right" @click="gotome"><a class="el-icon-view"></a></el-menu-item>
+            <el-menu-item index="4" style="float:right" @click="gotosquare"><a class="el-icon-menu"></a></el-menu-item>
+        </el-menu>
+    </div>
+
+    <div class="columns">
+
+        <div class="column is-one-fifth"></div>
+        <div class="column is-8">
+            <div>
+                <div class="columns">
+                    <div class="column is-6">
+                        <h1 class="title is-1" style="float:left">Square</h1>
+                    </div>
+                    <div class="column is-6">
+                        <figure class="image is-64x64" style="float:right;margin-top: 6%;margin-right:4%;">
+                            <img class="is-rounded" src="{{ user.photo.url }}">
+                        </figure>
+                    </div>
+
+                </div>
+                <div class="mdui-divider" style="margin-top: -3%;margin-bottom: 3%;"></div>
+            </div>
+            <div class="columns is-multiline is-mobile">
+                {% for post in posts %}
+                    <div class="column is-6">
+                        <el-card :body-style="{ padding: '0px' }" style="margin:5%">
+                            <img src="{{ post.img }}" class="image">
+                            <div style="padding: 14px;">
+                                <div>
+                                    <span>@{{ post.username }}</span>
+                                </div>
+                                <div>
+                                    <span>{{ post.description }}</span>
+                                </div>
+                                <div class="bottom clearfix">
+                                    <time class="time">{{ post.time | date:"Y/m/d H:i" }}</time>
+                                    <el-badge :value="{{ post.num }}" class="item"
+                                              style="float: right;margin-right:5%;">
+                                        <el-button v-if="{{ post.like }}==false" type="text">like</el-button>
+                                        <el-button v-else type="text">dislike</el-button>
+                                    </el-badge>
+                                </div>
+                            </div>
+                        </el-card>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="column is-2"></div>
+    </div>
+
+    <el-tooltip class="item" effect="dark" content="post" placement="left">
+        <button class="mdui-fab mdui-fab-fixed mdui-ripple" @click="add_on"><i
+                class="mdui-icon material-icons">add</i>
+        </button>
+    </el-tooltip>
+
+    <div id="addModal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title">Post</p>
+            </header>
+            <section class="modal-card-body">
+                <div class="columns">
+                    <div class="column is-4" style="text-align: center">
+                        <el-popover
+                                placement="left-start"
+                                v-bind:width="popover_width"
+                                v-model="visible_popover"
+                                trigger="hover">
+                            <img v-if="imageUrl!=''" :src="imageUrl">
+                            <p v-else>choose a picture</p>
+                            <el-upload
+                                    slot="reference"
+                                    ref="upload"
+                                    class="avatar-uploader"
+                                    action="https://jsonplaceholder.typicode.com/posts/"
+                                    :show-file-list="false"
+                                    :on-success="handleAvatarSuccess"
+                                    :on-error="handleAvatarError"
+                                    :before-upload="beforeAvatarUpload"
+                                    :on-change="preview"
+                                    :auto-upload="false"
+                                    style="align-content: center"
+                            >
+                                <img id="avatar" v-if="imageUrl" :src="imageUrl" class="avatar">
+                                <i v-else class="el-icon-plus avatar-uploader-icon"
+                                   style="display: flex;justify-content: center;align-items: center;"></i>
+                            </el-upload>
+                        </el-popover>
+                        <el-dropdown>
+                            <span class="el-dropdown-link">
+                            Filter<i class="el-icon-arrow-down el-icon--right"></i>
+                            </span>
+                            <el-dropdown-menu slot="dropdown">
+                                <el-dropdown-item>raw</el-dropdown-item>
+                                <el-dropdown-item>grey</el-dropdown-item>
+                            </el-dropdown-menu>
+                        </el-dropdown>
+                    </div>
+                    <div class="column is-8">
+                        <el-input type="textarea"
+                                  :rows="8"
+                                  resize="none"
+                                  placeholder="say something..."
+                                  v-model="description">
+                        </el-input>
+                    </div>
+                </div>
+            </section>
+            <footer class="modal-card-foot" style="justify-content: flex-end">
+                <el-button id="upload" type="primary" round @click="submitUpload">Let's go</el-button>
+                <el-button round @click="add_off">Cancel</el-button>
+            </footer>
+        </div>
+    </div>
+
+</div>
+
+</body>
+
+<!-- import Vue before Element -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script>
+    var vue = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#app',
+        data() {
+            return {
+                imageUrl: '',
+                visible_popover: false,
+                popover_width: 0,
+                description: '',
+                search_input: ''
+            };
+        },
+        methods: {
+            logout() {
+                window.location.href = ("/logout");
+            },
+            add_on() {
+                document.getElementById("addModal").setAttribute("class", "modal is-active");
+            },
+            add_off() {
+                document.getElementById("addModal").setAttribute("class", "modal");
+            },
+            handleAvatarSuccess(res, file) {
+                this.$message.error('success!');
+            },
+            handleAvatarError(res, file) {
+                this.$message.error('fail!');
+            },
+            beforeAvatarUpload(file) {
+                const isType = (file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/gif' || file.type === 'image/bmp');
+
+                if (!isType) {
+                    this.$message.error('Just PNG, JPG, GIF, BMP Available!');
+                    return false;
+                }
+
+                vue.fd = new FormData();
+                vue.fd.append("file", file);
+                vue.fd.append("description", vue.description);
+
+                return false;
+            }
+            ,
+            submitUpload() {
+                this.$refs.upload.submit();
+                $.ajax({
+                    url: "/post",
+                    type: "POST",
+                    processData: false,
+                    contentType: false,
+                    data: vue.fd,
+                    success: function (data1) {
+                        var msg = JSON.parse(data1);
+                        if (msg["msg"] == "success") {
+                            vue.$message.success('Posted!');
+                            window.location.href = "/me";
+                        } else {
+                            vue.$message.error(msg['info']);
+                        }
+                    }
+                });
+            }
+            ,
+            preview(file, fileList) {
+                this.imageUrl = URL.createObjectURL(file.raw);
+                this.popover_width = 400;
+            },
+            search() {
+                window.location.href = "/me?username=" + this.search_input;
+            }
+            ,
+            gotome() {
+                window.location.href = "/me";
+            },
+            gotosquare() {
+                window.location.href = "/square";
+            },
+        }
+    })
+</script>
+</html>
